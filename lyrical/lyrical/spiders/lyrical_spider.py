@@ -33,7 +33,7 @@ class LyricalSpiderSpider(scrapy.Spider):
 
     def parse(self, response):
         alphabet_urls = response.xpath('//a[@class="btn btn-menu"]/@href').extract()
-        for url in alphabet_urls[:1]:
+        for url in alphabet_urls:
             self.headers['User-Agent'] = self.ua.random
             yield scrapy.Request(
                 url=response.urljoin(url),
@@ -47,7 +47,7 @@ class LyricalSpiderSpider(scrapy.Spider):
     def parse_artists(self, response):
         lyrical_item = LyricalItem()
         artists = response.xpath('//div[@class="row"]//a')
-        for artist in artists[:1]:
+        for artist in artists:
             name = artist.xpath('./text()').extract_first()
             url = artist.xpath('./@href').extract_first()
             lyrical_item['artist'] = name
