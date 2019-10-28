@@ -10,6 +10,7 @@ from lyrical.items import LyricalItem
 class LyricalSpiderSpider(scrapy.Spider):
     name = 'lyrical-spider'
     allowed_domains = ['azlyrics.com']
+    proxy = 'http://127.0.0.1:24000'
     start_urls = []
     headers = {
         'Connection': 'keep-alive',
@@ -27,7 +28,7 @@ class LyricalSpiderSpider(scrapy.Spider):
             callback=self.parse,
             headers=self.headers,
             meta={
-                'proxy': 'http://127.0.0.1:24000'
+                'proxy': self.proxy
             }
         )
 
@@ -40,30 +41,28 @@ class LyricalSpiderSpider(scrapy.Spider):
                 callback=self.parse_artists,
                 headers=self.headers,
                 meta={
-                    'proxy': 'http://127.0.0.1:24000'
+                    'proxy': self.proxy
                 }
             )
 
     def parse_artists(self, response):
-        lyrical_item = LyricalItem()
         artists = response.xpath('//div[@class="row"]//a')
         for artist in artists:
             name = artist.xpath('./text()').extract_first()
             url = artist.xpath('./@href').extract_first()
-            lyrical_item['artist'] = name
             self.headers['User-Agent'] = self.ua.random
             yield scrapy.Request(
                 url=response.urljoin(url),
                 callback=self.parse_albums,
                 headers=self.headers,
                 meta={
-                    'lyrical_item': lyrical_item,
-                    'proxy': 'http://127.0.0.1:24000'
+                    'proxy': self.proxy,
+                    'artist': name
                 }
             )
 
     def parse_albums(self, response):
-        lyrical_item = response.meta['lyrical_item']
+        artist = response.meta['artist']
         album_list = response.xpath('//div[@id="listAlbum"]/*')
         album_name = 'Other Songs'
         year = None
@@ -78,20 +77,21 @@ class LyricalSpiderSpider(scrapy.Spider):
                 else:
                     album_name = 'Other Songs'
             elif album.root.tag == 'a':
-                new_item = lyrical_item.copy()
                 song_name = album.xpath('./text()').extract_first()
                 song_url = album.xpath('./@href').extract_first()
-                new_item['album'] = album_name
-                new_item['song'] = song_name
-                new_item['year'] = year
+                lyrical_item = LyricalItem()
+                lyrical_item['album'] = album_name
+                lyrical_item['artist'] = artist
+                lyrical_item['song'] = song_name
+                lyrical_item['year'] = year
                 self.headers['User-Agent'] = self.ua.random
                 yield scrapy.Request(
                     url=response.urljoin(song_url),
                     callback=self.parse_lyrics,
                     headers=self.headers,
                     meta={
-                        'lyrical_item': new_item,
-                        'proxy': 'http://127.0.0.1:24000'
+                        'lyrical_item': lyrical_item,
+                        'proxy': self.proxy
                     }
                 )
 
