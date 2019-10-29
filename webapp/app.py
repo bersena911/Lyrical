@@ -1,7 +1,7 @@
 import speech_recognition
 from elasticsearch import Elasticsearch
 from flask import Flask, render_template, request, jsonify
-from config.dev import ELASTICHOST, ELASTICINDEX
+from webapp.config.dev import ELASTICHOST, ELASTICINDEX
 
 r = speech_recognition.Recognizer()
 
@@ -23,7 +23,7 @@ def recognize():
         audio_data = recognizer.record(source)
     text = recognizer.recognize_google(audio_data)
     req = {
-        'min_score': 25,
+        'min_score': 1,
         'query': {
             'bool': {
                 'must': [
