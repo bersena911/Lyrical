@@ -2,7 +2,6 @@
 import re
 
 import scrapy
-from fake_useragent import UserAgent
 
 from lyrical.items import LyricalItem
 
@@ -14,7 +13,6 @@ class LyricalSpiderSpider(scrapy.Spider):
     start_urls = []
 
     def start_requests(self):
-        self.ua = UserAgent()
         yield scrapy.Request(
             url='https://www.azlyrics.com',
             callback=self.parse,
