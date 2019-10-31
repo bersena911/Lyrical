@@ -7,7 +7,7 @@ from lyrical.items import LyricalItem
 
 
 class LyricalSpiderSpider(scrapy.Spider):
-    name = 'lyrical-spider'
+    name = 'azlyrics'
     allowed_domains = ['azlyrics.com']
     proxy = 'http://127.0.0.1:24000'
     start_urls = []
