@@ -95,24 +95,79 @@ class LyricalSpiderSpider(scrapy.Spider):
                             }
                         )
         elif no_album_html:
-            album_name = 'Other Songs'
-            year = None
-            for song in no_album_html:
-                song_name = song.xpath('./text()').extract_first()
-                song_url = song.xpath('./@href').extract_first()
-                lyrical_item = LyricalItem()
-                lyrical_item['artist'] = artist
-                lyrical_item['album'] = album_name
-                lyrical_item['song'] = song_name
-                lyrical_item['year'] = year
-                yield scrapy.Request(
-                    url=response.urljoin(song_url),
-                    callback=self.parse_lyrics,
-                    meta={
-                        'lyrical_item': lyrical_item,
-                        # 'proxy': self.proxy
-                    }
-                )
+            if 'From the Album' in response.text:
+                album_html = response.xpath('//div[@id="artdata"]').extract_first()
+                years = re.findall(r'\(\d{4}\)', album_html)
+                album_html = album_html.replace('Other Songs', '<b>Other Songs</b>')
+                for year in years:
+                    replaced_year = year.replace('(', '<year>').replace(')', '</year>')
+                    album_html = album_html.replace(year, replaced_year)
+                album_html = scrapy.Selector(text=album_html)
+                album_html = album_html.xpath('//div[@id="artdata"]/*')
+                year = None
+                album_name = None
+                for elem in album_html:
+                    if elem.root.tag == 'b':
+                        album_name = elem.xpath('./text()').extract_first()
+                    elif elem.root.tag == 'year':
+                        year = elem.xpath('./text()').extract_first()
+                    elif elem.root.tag == 'span':
+                        if elem.xpath('.//b'):
+                            album_name = elem.xpath('.//b/text()').extract_first()
+                            album_song_list = response.xpath('//div[@class="albmsnglst"]/span/a')
+                            for song in album_song_list:
+                                song_name = song.xpath('./text()').extract_first()
+                                song_url = song.xpath('./@href').extract_first()
+                                lyrical_item = LyricalItem()
+                                lyrical_item['artist'] = artist
+                                lyrical_item['album'] = album_name
+                                lyrical_item['song'] = song_name
+                                lyrical_item['year'] = year
+                                yield scrapy.Request(
+                                    url=response.urljoin(song_url.lower()),
+                                    callback=self.parse_lyrics,
+                                    meta={
+                                        'lyrical_item': lyrical_item,
+                                        # 'proxy': self.proxy
+                                    }
+                                )
+                        else:
+                            song_name = elem.xpath('./a/text()').extract_first()
+                            song_url = elem.xpath('./a/@href').extract_first()
+                            if song_url == '#':
+                                continue
+                            lyrical_item = LyricalItem()
+                            lyrical_item['artist'] = artist
+                            lyrical_item['album'] = album_name
+                            lyrical_item['song'] = song_name
+                            lyrical_item['year'] = year
+                            yield scrapy.Request(
+                                url=response.urljoin(song_url.lower()),
+                                callback=self.parse_lyrics,
+                                meta={
+                                    'lyrical_item': lyrical_item,
+                                    # 'proxy': self.proxy
+                                }
+                            )
+            else:
+                album_name = 'Other Songs'
+                year = None
+                for song in no_album_html:
+                    song_name = song.xpath('./text()').extract_first()
+                    song_url = song.xpath('./@href').extract_first()
+                    lyrical_item = LyricalItem()
+                    lyrical_item['artist'] = artist
+                    lyrical_item['album'] = album_name
+                    lyrical_item['song'] = song_name
+                    lyrical_item['year'] = year
+                    yield scrapy.Request(
+                        url=response.urljoin(song_url),
+                        callback=self.parse_lyrics,
+                        meta={
+                            'lyrical_item': lyrical_item,
+                            # 'proxy': self.proxy
+                        }
+                    )
 
     def parse_lyrics(self, response):
         lyrical_item = response.meta['lyrical_item']
