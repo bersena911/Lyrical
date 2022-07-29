@@ -1,7 +1,7 @@
 Flask==1.1.1
 SpeechRecognition==3.8.1
 PyAudio==0.2.11
-Scrapy==1.7.4
+Scrapy==2.6.2
 python-dotenv==0.10.3
 elasticsearch==7.0.5
 jsonlines==1.2.0
