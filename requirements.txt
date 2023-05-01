@@ -1,4 +1,4 @@
-Flask==1.1.1
+Flask==2.3.2
 SpeechRecognition==3.8.1
 PyAudio==0.2.11
 Scrapy==1.7.4
